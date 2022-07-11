@@ -1,0 +1,8 @@
+[Desktop Entry]
+Type=Service
+ServiceTypes=Krita/PythonPlugin
+X-KDE-Library=wordart
+X-Python-2-Compatible=false
+X-Krita-Manual=wordartManual.html
+Name=wordart
+Comment=url to art
