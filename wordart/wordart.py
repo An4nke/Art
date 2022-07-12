@@ -86,8 +86,12 @@ class textforart:
 
 
 class DockerLinkGrepper(DockWidget):
-
-
+    global link
+    global html
+    global linkdata
+    global content
+	
+	     
     # svg
     def design_svg(strokecolor, fillcolor, width, height):
         trans = str(((800 - height)/2) - 80)   
@@ -112,39 +116,6 @@ class DockerLinkGrepper(DockWidget):
         </g>
         </svg>'''.encode('utf-8')
         return(svg)
-
-    coffee = '''\
-    <svg xmlns="http://www.w3.org/2000/svg" width="800px" height="600px" viewBox="0 0 24 24" fill="#000000">
-        <path d="M0 0h24v24H0V0z" fill="none"/>
-        <path d="M4 19h16v2H4zM20 3H4v10c0 2.21 1.79 4 4 4h6c2.21 0 4-1.79 4-4v-3h2c1.11 0 2-.9 2-2V5c0-1.11-.89-2-2-2zm-4 10c0 1.1-.9 2-2 2H8c-1.1 0-2-.9-2-2V5h10v8zm4-5h-2V5h2v3z"/>
-        <text x="0.2" y="22.5" font-size="0.1em">𝕶𝖗𝖎𝖙𝖆 𝖓𝖊𝖊𝖉𝖘 𝖒𝖔𝖔𝖗𝖊 𝕮𝖔𝖋𝖋𝖊𝖊!</text>
-    </svg>'''.encode('utf-8')
-    
-   
-    recording = 0
-
-
-
-    def newButtonIsClicked(self):
-        text = 'Welcome fellow human beeing ^.^'
-        print(text)
-        #content = line.text()
-        
-        # aktivate Checkbox if input is done
-        #if line.text():   
-           # newCheckbox.setCheckState(2)
-            #parser = MyHTMLParser()
-            #link = urllib.request.urlopen(content).read().decode()     
-            #html = parser.feed(link)   
-            #global linkdata
-            # get data, remove newline              
-            #linkdata = parser.data
-            #print(linkdata)
-            #newDialog.close()
-        #else:
-             #newCheckbox.setCheckState(0)          
-             #print('Please insert a valid Link! Thank you..')
-             #return
 
     def add_svg(svg):
         clipboard = QGuiApplication.clipboard()
@@ -171,108 +142,117 @@ class DockerLinkGrepper(DockWidget):
         add_svg(svg)
 
 
-    # add button and layout for button
-    layoutForButtons = QHBoxLayout()
-    newButton = QPushButton("load text") 
-    layoutForButtons.addWidget(newButton)
-    #layoutForButtons.addSpacing(200)
+    def __init__(self):
+        super().__init__() 
+        self.setWindowTitle("Url to Art")
+        mainWidget = QWidget(self)        
+        self.setWidget(mainWidget)        
+        
+        # add button and layout for button
+        layoutForButtons = QHBoxLayout()
+        newButton = QPushButton("load text", mainWidget) 
+        newButton.move(100, 700) 
+        layoutForButtons.addWidget(newButton)
 
-    # label
-    nameLabel = QLabel()
-    nameLabel.setText('Please input a link:')
-    layoutForButtons.addWidget(nameLabel)
+        # label
+        nameLabel = QLabel()
+        nameLabel.setText('Please input a link:')       
+        
+        #layoutForButtons.addWidget(nameLabel)
 
-    #input field
-    line = QLineEdit()
-    line.setPlaceholderText("URL")
-    line.setMinimumWidth(300)
-    line.setFont(QFont("console",8)) # change font
-    layoutForButtons.addWidget(line)
+        #input field
+        line = QLineEdit()
+        line.setPlaceholderText("URL")
+        line.setMinimumWidth(300)
+        line.setFont(QFont("console",8)) # change font
+        layoutForButtons.addWidget(line)
+        
 
+        # write some actions
+        clicked = 'Button clicked'
+        parser = MyHTMLParser()
+        content = line.text()
+ 
+        #add a checkbox
+        newCheckbox = QCheckBox()
+        newCheckbox.setText('realise input')
+        layoutForButtons.addWidget(newCheckbox)
+        mainWidget.setLayout(layoutForButtons)
+        mainWidget.layout().addWidget(newButton)
+               
+        newButton.clicked.connect(lambda: newCheckbox.setCheckState(2))
+        newCheckbox.clicked.connect(lambda: parser.feed(urllib.request.urlopen(content).read().decode()))
+        #parser.feed(urllib.request.urlopen(content).read().decode())
+        #link = urllib.request.urlopen(content).read().decode()
+        linkdata = parser.data
 
-    # write some actions
-    clicked = 'Button clicked'
-    newButton.clicked.connect(newButtonIsClicked)
+        # language
+        language = ''
 
-
-    #add a checkbox
-    newCheckbox = QCheckBox()
-    newCheckbox.setText('realise input')
-    link = layoutForButtons.addWidget(newCheckbox)
-
-    # create dialog  and show it
-    newDialog = QDialog() 
-    newDialog.setLayout(layoutForButtons)
-    newDialog.setWindowTitle("Loader") 
-    newDialog.exec_() # show the dialog
-
-    # language
-    language = ''
-
-    # filtering parsed text
-    text = ""
-    for phrases in linkdata:
-        #print (phrases)
-        #print('pre: '  + phrases)
-        phrases = phrases.rstrip("\n\r+0-9[]()+")
-        #print('after: ' + phrases)   
-        # skip unwanted characters         
-        text = text + phrases
-        #print('get: ' + phrases) 
+        # filtering parsed text
+        text = ""
+        for phrases in linkdata:
+            #print (phrases)
+            #print('pre: '  + phrases)
+            phrases = phrases.rstrip("\n\r+0-9[]()+")
+            #print('after: ' + phrases)   
+            # skip unwanted characters         
+            text = text + phrases
+            #print('get: ' + phrases) 
          
-    #print(text)
-    # create textblob
-    blob = TextBlob(text)
-    #print(blob.tags)
+        #print(text)
+        # create textblob
+        blob = TextBlob(text)
+        #print(blob.tags)
 
-    for w in blob.words:
-        if re.match(r"and", w):
-            language = 'en'
-        elif re.match(r"und", w):
-            language = 'de'
+        for w in blob.words:
+            if re.match(r"and", w):
+                language = 'en'
+            elif re.match(r"und", w):
+                language = 'de'
 
-    #print(language)
-    if language == 'de':
-        blob = TextBlobDE(text)
+        #print(language)
+        if language == 'de':
+            blob = TextBlobDE(text)
 
-    sentence_lens = []
-    commas = []
-    polarity = []
+        sentence_lens = []
+        commas = []
+        polarity = []
 
-    # print polarity of sentences
-    for sentence in blob.sentences:
+        # print polarity of sentences
+        for sentence in blob.sentences:
     
-        # length of sentences
-        sentence_lens.append(len(sentence))    
+            # length of sentences
+            sentence_lens.append(len(sentence))    
   
-        # number of commas
-        commas.append(len(re.findall(',', str(sentence))))    
+            # number of commas
+            commas.append(len(re.findall(',', str(sentence))))    
     
-        # polarity
-        polarity.append(sentence.sentiment.polarity)
+            # polarity
+            polarity.append(sentence.sentiment.polarity)
   
-    # init new textforart object
-    art = textforart(language, sentence_lens, blob.sentences, commas, polarity)   
+        # init new textforart object
+        art = textforart(language, sentence_lens, blob.sentences, commas, polarity)   
 
-    # make art out of object
+        # make art out of object
 
-    # width: 0 - 700
-    # height: 0 - 700
-    # fill color:#000000 # stroke color:#000000
-    stroke = "rgb(" + str(round(125*(1/art.mean_number_commas))) + ", " + str(round(125 - art.min_sentences_polarity)) + ", " + str(round(125 - art.max_sentences_polarity)) + ")"
-    fill = "rgb(" + str(round(125*(1/art.mean_number_commas))) + ", " + str(round(125 - art.min_sentences_polarity)) + ", " + str(round(125 - art.max_sentences_polarity)) + ")"
-    #ImageColor.getcolor("#23a9dd", "RGB")
+        # width: 0 - 700
+        # height: 0 - 700
+        # fill color:#000000 # stroke color:#000000
+        stroke = "rgb(" + str(round(125*(1/art.mean_number_commas))) + ", " + str(round(125 - art.min_sentences_polarity)) + ", " + str(round(125 - art.max_sentences_polarity)) + ")"
+        fill = "rgb(" + str(round(125*(1/art.mean_number_commas))) + ", " + str(round(125 - art.min_sentences_polarity)) + ", " + str(round(125 - art.max_sentences_polarity)) + ")"
+        #ImageColor.getcolor("#23a9dd", "RGB")
 
-    #stroke = "rgb(255, 255, 255)"
-    #stroke = "rgb(255, 254, 94.)"
-    #fill = "rgb(255, 255, 255)"
+        #stroke = "rgb(255, 255, 255)"
+        #stroke = "rgb(255, 254, 94.)"
+        #fill = "rgb(255, 255, 255)"
 
-    # define with of svg
-    heigh = 700- (10000*art.mean_sentences_polarity)
-    width = 700*art.mean_number_commas
+        # define with of svg
+        heigh = 700- (10000*art.mean_sentences_polarity)
+        width = 700*art.mean_number_commas
 
-    svg = design_svg(stroke, fill, 700, 700)
-    create_svg(svg)
+        svg = design_svg(stroke, fill, 700, 700)
+        create_svg(svg)
 
     def canvasChanged(self, canvas):
        pass
