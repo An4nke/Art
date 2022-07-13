@@ -14,8 +14,8 @@ This plugin is still in progress.. The textblob is still growing and evolving.. 
 
 0. Make sure the right python (4.X/5.X) is installed on your System.
 
-1. Take care Krita ist installed on your system ([link]https://krita.org/en/). You might install it first. 
-Carefully choose the Krita Version compatible for your system and Python-Version. 
+1. Take care Krita ist installed on your system (https://krita.org/en/). You might install it first. 
+Carefully choose the Krita Version compatible for your system and Python-Version. And make sure to have the python-packages ``textblob``, ``textblob_de``, ``html.parser`` and ``urllib.request`` installed. You might use ``pip install [packages]`` or ``python[version] -m pip install [packages]``.
 
 2. Download the files of this repository accordingly to the advices of github.
 
