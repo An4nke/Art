@@ -1,3 +1,4 @@
+from krita import *
 from html.parser import HTMLParser
 import urllib.request
 
@@ -24,31 +25,40 @@ class MyHTMLParser(HTMLParser):
 # define object/class for analysis
 class textforart:
     
-    def __init__(self, language, sentences_lens, sentences, commas, polarity):    
+    def __init__(self, language, sentence_lens, sentences, commas, polarity):    
        # Sprache
        self.language = language
 
        # Satz
+       if len(sentences) == 0:
+           sentences = ['Hello fellow human beeing ^.^']
        self.senctences = sentences
        
        # Sentence lengthes
-       self.sentences_lens = sentence_lens       
+       if len(sentence_lens) == 0:
+           sentence_lens = [0]
+       self.sentence_lens = sentence_lens       
        
        # Commas
+       if len(commas) == 0:       
+           commas = [0]
        self.commas = commas
             
        # Bewertung
+       if len(polarity) == 0:        
+           polarity = [0]
        self.polarity = polarity
        
        # Komplezität
+       complexity = [0]
        self.complexity = ''
 
        
        # Satzlänge
        self.sentence_number = len(sentences)      
-       self.min_sentence_length = min(sentences_lens)
-       self.max_sentence_length = max(sentences_lens)
-       self.mean_sentence_length = sum(sentences_lens) / len(sentences)  
+       self.min_sentence_length = min(sentence_lens)
+       self.max_sentence_length = max(sentence_lens)
+       self.mean_sentence_length = sum(sentence_lens) / len(sentences)  
        
        # Kommas
        self.number_commas = len(commas)
@@ -71,6 +81,7 @@ class textforart:
        self.signatur_word = ''          
             
 def add_svg(svg):
+	
     clipboard = QGuiApplication.clipboard()
     mime_data = QMimeData()
     mime_data.setData('image/svg+xml', svg)
@@ -80,13 +91,13 @@ def add_svg(svg):
 def create_svg(svg):
     app = Krita.instance()
     # Document open?
-    #if app.activeDocument():
+    if app.activeDocument():
         #print("aktive document")
-        #doc = app.activeDocument() 
-    #else:
+        doc = app.activeDocument() 
+    else:
         #print("create document")
-        #doc = app.createDocument(800, 600, 'SVGA Test', 'RGBA', 'U8', '', 120.0)
-        #app.activeWindow().addView(doc)
+        doc = app.createDocument(800, 600, 'SVGA Test', 'RGBA', 'U8', '', 120.0)
+        app.activeWindow().addView(doc)
         
     doc = app.createDocument(800, 600, 'SVGA Test', 'RGBA', 'U8', '', 120.0)
     app.activeWindow().addView(doc) 
