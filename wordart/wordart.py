@@ -3,17 +3,35 @@ import sys
 import re
 
 from krita import *
-from textblob import TextBlob
-from textblob_de import TextBlobDE
-
 
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
+from html.parser import HTMLParser
+import urllib.request
+from wordart.classes import *
+from wordart.svg_vorlagen import *
 
-from .classes import *
-from .svg_vorlagen import *
+# define class HTML-Parser
+class MyHTMLParser(HTMLParser):
 
+    def __init__(self):
+        super().__init__()
+        self.data = []
+        self.capture = False
+
+    def handle_starttag(self, tag, attrs):
+        if tag in ('p', 'h1'):
+            self.capture = True
+
+    def handle_endtag(self, tag):
+        if tag in ('p', 'h1'):
+            self.capture = False
+
+    def handle_data(self, data):
+        if self.capture:
+            self.data.append(data)
+            
 
 class DockerLinkGrepper(DockWidget):
     global link
@@ -48,9 +66,7 @@ class DockerLinkGrepper(DockWidget):
         
 
         # write some actions
-        clicked = 'Button clicked'
-        parser = MyHTMLParser()
-        content = line.text()
+        clicked = 'Button clicked'           
  
         #add a checkbox
         newCheckbox = QCheckBox()
@@ -58,82 +74,31 @@ class DockerLinkGrepper(DockWidget):
         layoutForButtons.addWidget(newCheckbox)
         mainWidget.setLayout(layoutForButtons)
         mainWidget.layout().addWidget(newButton)
-               
-        newButton.clicked.connect(lambda: newCheckbox.setCheckState(2))
-        newCheckbox.clicked.connect(lambda: parser.feed(urllib.request.urlopen(content).read().decode()))
-        #parser.feed(urllib.request.urlopen(content).read().decode())
-        #link = urllib.request.urlopen(content).read().decode()
-        linkdata = parser.data
-
-        # language
-        language = ''
-
-        # filtering parsed text
-        text = ""
-        for phrases in linkdata:
-            #print (phrases)
-            #print('pre: '  + phrases)
-            phrases = phrases.rstrip("\n\r+0-9[]()+")
-            #print('after: ' + phrases)   
-            # skip unwanted characters         
-            text = text + phrases
-            #print('get: ' + phrases) 
-         
-        #print(text)
-        # create textblob
-        blob = TextBlob(text)
-        #print(blob.tags)
-
-        for w in blob.words:
-            if re.match(r"and", w):
-                language = 'en'
-            elif re.match(r"und", w):
-                language = 'de'
-
-        #print(language)
-        if language == 'de':
-            blob = TextBlobDE(text)
-
-        sentence_lens = []
-        commas = []
-        polarity = []
-
-        # print polarity of sentences
-        for sentence in blob.sentences:
-    
-            # length of sentences
-            sentence_lens.append(len(sentence))    
-  
-            # number of commas
-            commas.append(len(re.findall(',', str(sentence))))    
-    
-            # polarity
-            polarity.append(sentence.sentiment.polarity)
-  
-        # init new textforart object
-        #art = textforart(self, language, sentence_lens, blob.sentences, commas, polarity)   
-   
-        # make art out of object
-
-        # width: 0 - 700
-        # height: 0 - 700
-        # fill color:#000000 # stroke color:#000000
-        #stroke = "rgb(" + str(round(125*(1/art.mean_number_commas))) + ", " + str(round(125 - art.min_sentences_polarity)) + ", " + str(round(125 - art.max_sentences_polarity)) + ")"
-        #fill = "rgb(" + str(round(125*(1/art.mean_number_commas))) + ", " + str(round(125 - art.min_sentences_polarity)) + ", " + str(round(125 - art.max_sentences_polarity)) + ")"
-        #ImageColor.getcolor("#23a9dd", "RGB")
-
-        stroke = "rgb(255, 255, 255)"
-        stroke = "rgb(255, 254, 94.)"
-        #fill = "rgb(255, 255, 255)"
-
-        # define with of svg
-        #heigh = 700- (10000*art.mean_sentences_polarity)
-        #width = 700*art.mean_number_commas
-
-        #svg = design_svg(stroke, fill, 700, 700)
-        #create_svg(svg)
-
+            
+        #newButton.clicked.connect(lambda: newCheckbox.setCheckState(2))
+        newButton.clicked.connect(lambda: newButtonIsClicked())
+        #newButton.clicked.connect(lambda: makeart(content, parser))
+        
+        #newCheckbox.clicked.connect(lambda: parser.feed(urllib.request.urlopen(content).read().decode()))
+        #newButton.clicked.connect(self.newButtonIsClicked(content))
+        
+        #global parser         
+        #parser = MyHTMLParser()
+        #if line.text():
+            #makeart(line.text(), parser)
+        #newCheckbox.clicked.connect(makeart(content, parser)) 
+        
+        def newButtonIsClicked():
+            # text = 'Welcome fellow human beeing ^.^        
+            # aktivate Checkbox if input is done
+            newCheckbox.setCheckState(2)
+            if line.text():   
+                parser = MyHTMLParser()
+                makeart(line.text(), parser)
+                
+            else: 
+                newCheckbox.setCheckState(1)
+                
 
     def canvasChanged(self, canvas):
-       pass
- 
+        pass

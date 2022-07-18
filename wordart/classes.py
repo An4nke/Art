@@ -1,6 +1,11 @@
 from krita import *
+from textblob import TextBlob
+from textblob_de import TextBlobDE
+import re
 from html.parser import HTMLParser
 import urllib.request
+from wordart.svg_vorlagen import *
+
 
 # define class HTML-Parser
 class MyHTMLParser(HTMLParser):
@@ -21,6 +26,7 @@ class MyHTMLParser(HTMLParser):
     def handle_data(self, data):
         if self.capture:
             self.data.append(data)
+            
             
 # define object/class for analysis
 class textforart:
@@ -104,3 +110,61 @@ def create_svg(svg):
     layer = doc.createVectorLayer('ColorSVG')
     layer.setName('ColorSVG')
     add_svg(svg)
+
+
+def makeart(content, parser):
+
+    parser.feed(urllib.request.urlopen(content).read().decode())
+    linkdata = parser.data
+
+    if linkdata is not None:
+        # language
+        language = ''
+
+        # filtering parsed text
+        text = ""
+        for phrases in linkdata:
+            phrases = phrases.rstrip("\n\r+0-9[]()+")
+            # skip unwanted characters         
+            text = text + phrases
+         
+    # create textblob
+    blob = TextBlob(text)
+    
+    # language?
+    for w in blob.words:
+        if re.match(r"and", w):
+            language = 'en'
+        elif re.match(r"und", w):
+            language = 'de'
+
+    if language == 'de':
+        blob = TextBlobDE(text)
+
+    sentence_lens = []
+    commas = []
+    polarity = []
+
+    # print polarity of sentences
+    for sentence in blob.sentences:    
+                # length of sentences
+                sentence_lens.append(len(sentence))     
+                # number of commas
+                commas.append(len(re.findall(',', str(sentence))))       
+                # polarity
+                polarity.append(sentence.sentiment.polarity)
+  
+    # init new textforart object
+    art = textforart(language, sentence_lens, blob.sentences, commas, polarity)   
+   
+    # make art out of object
+    # fill color:#000000 # stroke color:#000000
+    stroke = "rgb(" + str(round(125*(1/art.mean_number_commas))) + ", " + str(round(125 - art.min_sentences_polarity)) + ", " + str(round(125 - art.max_sentences_polarity)) + ")"
+    fill = "rgb(" + str(round(125*(1/art.mean_number_commas))) + ", " + str(round(125 - art.min_sentences_polarity)) + ", " + str(round(125 - art.max_sentences_polarity)) + ")"
+
+    # define with of svg
+    heigh = 700- (10*art.mean_sentences_polarity)
+    width = 700*art.mean_number_commas
+
+    svg = design_svg(stroke, fill, heigh, width)
+    create_svg(svg)
