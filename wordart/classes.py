@@ -4,7 +4,10 @@ from textblob_de import TextBlobDE
 import re
 from html.parser import HTMLParser
 import urllib.request
-from wordart.svg_vorlagen import *
+from nrclex import NRCLex
+import numpy as np
+import math
+from PIL import Image
 
 
 # define class HTML-Parser
@@ -28,64 +31,6 @@ class MyHTMLParser(HTMLParser):
             self.data.append(data)
             
             
-# define object/class for analysis
-class textforart:
-    
-    def __init__(self, language, sentence_lens, sentences, commas, polarity):    
-       # Sprache
-       self.language = language
-
-       # Satz
-       if len(sentences) == 0:
-           sentences = ['Hello fellow human beeing ^.^']
-       self.senctences = sentences
-       
-       # Sentence lengthes
-       if len(sentence_lens) == 0:
-           sentence_lens = [0]
-       self.sentence_lens = sentence_lens       
-       
-       # Commas
-       if len(commas) == 0:       
-           commas = [0]
-       self.commas = commas
-            
-       # Bewertung
-       if len(polarity) == 0:        
-           polarity = [0]
-       self.polarity = polarity
-       
-       # Komplezität
-       complexity = [0]
-       self.complexity = ''
-
-       
-       # Satzlänge
-       self.sentence_number = len(sentences)      
-       self.min_sentence_length = min(sentence_lens)
-       self.max_sentence_length = max(sentence_lens)
-       self.mean_sentence_length = sum(sentence_lens) / len(sentences)  
-       
-       # Kommas
-       self.number_commas = len(commas)
-       self.min_number_commas = min(commas)
-       self.max_number_commas = max(commas)
-       self.mean_number_commas = len(commas)/ len(sentences)   
-        
-       # Bewertung
-       self.sum_sentences_polarity = sum(polarity)
-       self.min_sentences_polarity = min(polarity)
-       self.max_sentences_polarity = max(polarity)
-       self.mean_sentences_polarity = sum(polarity) / len(sentences)
-        
-       # Schätzer für Komplexität  
-       self.max_complexity = 0
-       self.min_complexity = 0
-       self.mean_complexity = 0   
-       
-       # signatur Word -> mean purpose
-       self.signatur_word = ''          
-            
 def add_svg(svg):
 	
     clipboard = QGuiApplication.clipboard()
@@ -94,77 +39,170 @@ def add_svg(svg):
     clipboard.setMimeData(mime_data)
     Application.action('edit_paste').trigger()
     
-def create_svg(svg):
+def create_svg(svg, width, heigth):
     app = Krita.instance()
     # Document open?
     if app.activeDocument():
-        #print("aktive document")
         doc = app.activeDocument() 
     else:
-        #print("create document")
-        doc = app.createDocument(800, 600, 'SVGA Test', 'RGBA', 'U8', '', 120.0)
-        app.activeWindow().addView(doc)
+        doc = app.createDocument(width, heigth, 'SVGA Test', 'RGBA', 'U8', '', 120.0)
         
-    doc = app.createDocument(800, 600, 'SVGA Test', 'RGBA', 'U8', '', 120.0)
     app.activeWindow().addView(doc) 
     layer = doc.createVectorLayer('ColorSVG')
     layer.setName('ColorSVG')
     add_svg(svg)
 
+def design_svg(width, height, x, y):
+	svg = f'''<?xml version="1.0" encoding="iso-8859-1"?>
+		<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
+		<svg>'''
+	return(svg)
 
+def design_svg2(fillcolor, width, height, x, y):
+    svg = f'''<rect x="{x}" y="{y}" width="{width}" height="{height}" fill = "{fillcolor}"/>'''
+    return(svg)
+
+
+
+## make art from emotions
 def makeart(content, parser):
 
-    parser.feed(urllib.request.urlopen(content).read().decode())
-    linkdata = parser.data
+	parser = MyHTMLParser()            
+	parser.feed(urllib.request.urlopen(content).read().decode())
+	linkdata = parser.data
 
-    if linkdata is not None:
-        # language
-        language = ''
+	# language
+	language = ''
 
-        # filtering parsed text
-        text = ""
-        for phrases in linkdata:
-            phrases = phrases.rstrip("\n\r+0-9[]()+")
-            # skip unwanted characters         
-            text = text + phrases
-         
-    # create textblob
-    blob = TextBlob(text)
-    
-    # language?
-    for w in blob.words:
-        if re.match(r"and", w):
-            language = 'en'
-        elif re.match(r"und", w):
-            language = 'de'
+	# number of sentences
+	sentencenr = 0
 
-    if language == 'de':
-        blob = TextBlobDE(text)
+	# filtering parsed text
+	text = ""	
 
-    sentence_lens = []
-    commas = []
-    polarity = []
+	for phrases in linkdata:
+		phrases = phrases.rstrip("\n\r+0-9[]()+")
+		# skip unwanted characters         
+		text = text + phrases
 
-    # print polarity of sentences
-    for sentence in blob.sentences:    
-                # length of sentences
-                sentence_lens.append(len(sentence))     
-                # number of commas
-                commas.append(len(re.findall(',', str(sentence))))       
-                # polarity
-                polarity.append(sentence.sentiment.polarity)
-  
-    # init new textforart object
-    art = textforart(language, sentence_lens, blob.sentences, commas, polarity)   
-   
-    # make art out of object
-    # fill color:#000000 # stroke color:#000000
-    stroke = "rgb(" + str(round(125*(1/art.mean_number_commas))) + ", " + str(round(125 - art.min_sentences_polarity)) + ", " + str(round(125 - art.max_sentences_polarity)) + ")"
-    fill = "rgb(" + str(round(125*(1/art.mean_number_commas))) + ", " + str(round(125 - art.min_sentences_polarity)) + ", " + str(round(125 - art.max_sentences_polarity)) + ")"
 
-    # define with of svg
-    heigh = 700- (10*art.mean_sentences_polarity)
-    width = 700*art.mean_number_commas
+	# create textblob
+	blob = TextBlob(text)
+	
+	# language?
+	for w in blob.words:
+		sentencenr = sentencenr + 1
+		if re.match(r"and", w):
+			language = 'en'
+		elif re.match(r"und", w):
+			language = 'de'
 
-    svg = design_svg(stroke, fill, heigh, width)
-    create_svg(svg)
+	if language == 'de':
+		blob = TextBlobDE(text)
+	else:
+		blob = TextBlob(text)
+
+	polarity = []
+	
+	for sentence in blob.sentences:    
+		# polarity
+		polarity.append(sentence.sentiment.polarity)
+	
+	text_object = NRCLex('nrc_en.json')
+	size = round(math.sqrt(len(linkdata)))
+	i = 0 # counter for all tuples
+	j = 0 # counter for resize	
+
+	lim = 0.2
+	
+	for sentence in blob.sentences:     
+		# polarity
+		polarity.append(sentence.sentiment.polarity)
+	
+    # define svg as string variable
+	#svg = bytes()
+	svg = design_svg(size, size, 0, 0)
+	
+	if linkdata is not None:
+		# filtering parsed text
+		text = ""
+		for x in range(size):
+			for y in range(size):
+				phrase = linkdata[j].rstrip("\n\r+0-9[]()+")
+				
+				# skip unwanted characters     
+				text = text + phrase
+				
+				# let's show the emotions
+				emotion = NRCLex(phrase)
+
+				red = 0
+				green = 0
+				blue = 0
+
+				## calculate value for red:
+				# positive-low arousal: trust, positive, surprise, joy		
+				if emotion.raw_emotion_scores.get('trust'):
+					red = red + (100*3.137*emotion.raw_emotion_scores['trust'])			
+				if emotion.raw_emotion_scores.get('joy'):			
+					red = red + (100*3.137*emotion.raw_emotion_scores['joy'])						
+				if emotion.raw_emotion_scores.get('surprise'):						
+					red = red + (100*3.137*emotion.raw_emotion_scores['surprise'])
+												
+				## calculate value for blue:
+				# negative-high arousal: fear, anger, sadness
+				if emotion.raw_emotion_scores.get('fear'):
+					blue = blue + (100*1.961*emotion.raw_emotion_scores['fear'])			
+				if emotion.raw_emotion_scores.get('anger'):
+					blue = blue + (100*1.961*emotion.raw_emotion_scores['anger'])							
+				if emotion.raw_emotion_scores.get('sadness'):
+					blue = blue + (100*1.961*emotion.raw_emotion_scores['sadness'])					
+
+				## calculate value for green: anticip, disgust, negative
+				if emotion.raw_emotion_scores.get('anticip'):
+					green = green + (100*1.176*emotion.raw_emotion_scores['anticip'])					
+				if emotion.raw_emotion_scores.get('disgust'):
+					green = green + (100*1.176*emotion.raw_emotion_scores['disgust'])								
+				if emotion.raw_emotion_scores.get('negative'):
+					green = green + (10*1.176*emotion.raw_emotion_scores['negative'])
+
+				## now adding the polarity
+				if polarity[j] < -1*float(lim):
+					red = red + (100*3.137*polarity[j]) 
+				elif polarity[j] > float(lim):
+					blue = blue + (100*1.961*polarity[j])
+				else:
+					green = green + (100*1.176*polarity[j])
+
+				## make sure every color is max 250
+				if red > 255:
+					red = 255
+					
+				if green > 255:
+					green = 255				
+					
+				if blue > 255:
+					blue = 255	
+				
+				## calculate Color
+				rgbcolor = "rgb(" + str(round(red)) + ", " + str(round(green)) + ", " + str(round(blue)) + ")"
+	
+                # create svg
+				svg_part = design_svg2(rgbcolor, 10, 10, x, y)
+				svg = svg + svg_part
+
+				# reset counter
+				try:
+					polarity[j + 1]
+					j = j + 1
+				except IndexError:
+					j = 0 
+																	
+
+	svg_end = f'''</svg>'''
+	svg = svg + svg_end
+					 
+	create_svg(svg.encode('utf-8'), size, size)
+	#f = open("/tmp/test.svg", "w")
+	#f.write(str(svg.encode('utf-8')))
+	#f.write(svg)

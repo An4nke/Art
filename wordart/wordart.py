@@ -10,7 +10,7 @@ from PyQt5.QtCore import *
 from html.parser import HTMLParser
 import urllib.request
 from wordart.classes import *
-from wordart.svg_vorlagen import *
+#from wordart.svg_vorlagen import *
 
 # define class HTML-Parser
 class MyHTMLParser(HTMLParser):
@@ -69,11 +69,11 @@ class DockerLinkGrepper(DockWidget):
         clicked = 'Button clicked'           
  
         #add a checkbox
-        newCheckbox = QCheckBox()
-        newCheckbox.setText('realise input')
-        layoutForButtons.addWidget(newCheckbox)
+        #newCheckbox = QCheckBox()
+        #newCheckbox.setText('realise input')
+        #layoutForButtons.addWidget(newCheckbox)
         mainWidget.setLayout(layoutForButtons)
-        mainWidget.layout().addWidget(newButton)
+        #mainWidget.layout().addWidget(newButton)
             
         #newButton.clicked.connect(lambda: newCheckbox.setCheckState(2))
         newButton.clicked.connect(lambda: newButtonIsClicked())
@@ -91,13 +91,13 @@ class DockerLinkGrepper(DockWidget):
         def newButtonIsClicked():
             # text = 'Welcome fellow human beeing ^.^        
             # aktivate Checkbox if input is done
-            newCheckbox.setCheckState(2)
+            #newCheckbox.setCheckState(2)
             if line.text():   
                 parser = MyHTMLParser()
                 makeart(line.text(), parser)
                 
-            else: 
-                newCheckbox.setCheckState(1)
+            #else: 
+                #newCheckbox.setCheckState(1)
                 
 
     def canvasChanged(self, canvas):
